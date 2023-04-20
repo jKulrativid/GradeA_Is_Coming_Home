@@ -5,3 +5,4 @@ services:
     volumes:
       - ./terrasort-volume:/app/result
     build: ./terrasort
+    env_file: .env
