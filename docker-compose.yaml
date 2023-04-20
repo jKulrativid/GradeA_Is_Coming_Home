@@ -4,5 +4,9 @@ services:
   terrasort:
     volumes:
       - ./terrasort-volume:/app/result
-    build: ./terrasort
+    build:
+      context: ./terrasort
+      args:
+        # profile, prod
+        MODE: prod
     env_file: .env

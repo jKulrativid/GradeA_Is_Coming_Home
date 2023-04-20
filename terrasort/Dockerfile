@@ -10,6 +10,8 @@ RUN apt install g++-9 -y
 RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 10 && update-alternatives --config g++
 RUN apt install libtbb-dev -y
 
+# RUN if [ "$MODE" = "profile" ] ; then apt install valgrind && rm valgrind.log*
+
 COPY sort-*.txt .
 COPY main.cpp .
 
