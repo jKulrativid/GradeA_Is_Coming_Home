@@ -38,45 +38,25 @@ TYPE _parse(char* char_ptr)
 
 void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vector<std::pair<std::string, double>>* v)
 {
-	std::vector<char> rawVals;
-	rawVals.reserve(chunk_size + 100);
 	std::ifstream fin(filepath.c_str());
 	fin.seekg(readstart);
-	while (fin.peek() != '\n')
+	while (fin.peek() != 's' )
 	{
 		char nextChar;
 		fin.get(nextChar);
 		chunk_size--;
 	}
-	char _nextch; fin.get(_nextch);
-	rawVals.resize(chunk_size);
-	for (int i = 0; i < chunk_size; i++)
-	{
-		fin.get(rawVals[i]);
-	}
-
-	// handle splittng between the line
-	const size_t nChar = rawVals.size();
-	if (rawVals[nChar-1] != '\n')
-	{
-		while (fin.peek() != EOF && fin.peek() != '\n')
-		{
-			char nextChar;
-			fin.get(nextChar);
-			rawVals.push_back(nextChar);
-		}
-	}
-	rawVals.push_back('\n');
 
 	size_t cnt = 0;
+	char c;
 	char buf[200];
-	char keybuf[2000];
-	bool passSpace = false;
-	for (char& c: rawVals)
+	char keybuf[200];
+	bool passSpace = false, passdash = false;
+	for (size_t i = 0; i < chunk_size; i++)
 	{
+		fin.get(c);
 		if (passSpace)
 		{
-			
 			if (c == '\n')
 			{
 				v->push_back(std::make_pair(std::string(keybuf), _parse(buf)));
@@ -89,20 +69,62 @@ void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vecto
 				cnt++;
 			}
 		}
-		else
+		else if (passdash)
 		{
 			if (c == ' ')
 			{
+				passdash = false;
 				passSpace = true;
-			}
-			else if (c == ':')
-			{
 				cnt = 0;
 			}
-			else
+			else if (c != ':')
 			{
 				keybuf[cnt] = c;
 				cnt++;
+			}
+		}
+		else if (c == '-')
+		{
+			passdash = true;
+		}
+	}
+	
+	if (c != '\n' && fin.peek() != EOF)
+	{
+		while (fin.peek() != EOF && fin.peek() != 's')
+		{
+			fin.get(c);
+			if (passSpace)
+			{
+				if (c == '\n')
+				{
+					v->push_back(std::make_pair(std::string(keybuf), _parse(buf)));
+					cnt = 0;
+					passSpace = false;
+				}
+				else
+				{
+					buf[cnt] = c;
+					cnt++;
+				}
+			}
+			else if (passdash)
+			{
+				if (c == ' ')
+				{
+					passdash = false;
+					passSpace = true;
+					cnt = 0;
+				}
+				else if (c != ':')
+				{
+					keybuf[cnt] = c;
+					cnt++;
+				}
+			}
+			else if (c == '-')
+			{
+				passdash = true;
 			}
 		}
 	}
@@ -186,10 +208,11 @@ int main(int argc, char** argv)
 	auto nthreadChar = std::getenv("NTHREAD");
 	if (!nthreadChar)
 	{
-		nthreadChar = "1";
+		nthreadChar = "12";
 	}
 	N_THRAED = atoi(nthreadChar);
 	omp_set_num_threads(N_THRAED);
+	std::cout << "N THread =" << N_THRAED << std::endl;
 
 	std::string inputpath(argv[1]), outputpath(argv[2]);
 	std::cout << inputpath << " | " << outputpath << std::endl;
