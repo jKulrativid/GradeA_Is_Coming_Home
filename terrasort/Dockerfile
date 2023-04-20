@@ -12,6 +12,6 @@ RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 10 && update-a
 COPY sort-*.txt .
 COPY main.cpp .
 
-RUN g++ -pthread -ggdb3 -lstdc++fs -std=c++17 -Wall -Wextra -pedantic -o main.out main.cpp -fopenmp -ltbb -lstdc++fs
+RUN g++ -pthread -ggdb3 -O3 -lstdc++fs -std=c++17 -Wall -Wextra -pedantic -o main.out main.cpp -fopenmp -ltbb -lstdc++fs
 
 ENTRYPOINT [ "./main.out" ]
