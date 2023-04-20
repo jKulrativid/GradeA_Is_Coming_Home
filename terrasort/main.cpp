@@ -14,7 +14,7 @@
 
 int N_THRAED; // assign in runtime (main func)
 
-inline size_t getFileSize(std::string& filepath)
+inline size_t getFileSize(const std::string& filepath)
 {
 	std::filesystem::path path(filepath);
 	std::filesystem::file_status status = std::filesystem::status(path);
@@ -42,12 +42,13 @@ void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vecto
 	rawVals.reserve(chunk_size + 100);
 	std::ifstream fin(filepath.c_str());
 	fin.seekg(readstart);
-	while (fin.peek() != 's')
+	while (fin.peek() != '\n')
 	{
 		char nextChar;
 		fin.get(nextChar);
 		chunk_size--;
 	}
+	char _nextch; fin.get(_nextch);
 	rawVals.resize(chunk_size);
 	for (int i = 0; i < chunk_size; i++)
 	{
@@ -107,7 +108,7 @@ void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vecto
 	}
 }
 
-void _merge(std::vector<std::pair<std::string, double>>& v, std::vector<std::pair<std::string, double>>& frag, size_t start, size_t end)
+void _merge(std::vector<std::pair<std::string, double>>& v, std::vector<std::pair<std::string, double>>& frag, const size_t start, const size_t end)
 {
 	auto itr = frag.begin();
 	for (size_t i = start; i < end; i++)
@@ -117,7 +118,7 @@ void _merge(std::vector<std::pair<std::string, double>>& v, std::vector<std::pai
 	}
 }
 
-inline void read_file(std::string filepath, std::vector<std::pair<std::string, double>>* result)
+inline void read_file(const std::string& filepath, std::vector<std::pair<std::string, double>>* result)
 {
 	const size_t fileSize = getFileSize(filepath);
 	if (fileSize < (1<<20) && false)
@@ -161,8 +162,21 @@ inline void read_file(std::string filepath, std::vector<std::pair<std::string, d
 	}
 }
 
+inline void write_file(const std::vector<std::pair<std::string, TYPE>>& v, const std::string& outputpath)
+{
+	std::ofstream fout(outputpath);
+
+	for (auto& x: v)
+	{
+		fout << x.first << ": " << x.second << "\n";
+	}
+}
+
 int main(int argc, char** argv)
 {
+	// START TIME
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
 	if (argc < 3)
 	{
 		std::cout << "missing arg" << std::endl;
@@ -190,9 +204,13 @@ int main(int argc, char** argv)
 		return lhs.second < rhs.second;
 	});
 
-	for (auto x: v)
-	{
-		std::cout << x.first << ": " << x.second << std::endl;
-	}
+	write_file(v, outputpath);
+
+	// END TIME
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	
+	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[s]" << std::endl;
+	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
+
 	std::exit(0);
 }
