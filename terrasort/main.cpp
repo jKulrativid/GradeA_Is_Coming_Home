@@ -72,15 +72,9 @@ void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vecto
 	bool passSpace = false;
 	for (char& c: rawVals)
 	{
-		if (!passSpace)
+		if (passSpace)
 		{
-			if (c == ' ')
-			{
-				passSpace = true;
-			}
-		}
-		else
-		{
+			
 			if (c == '\n')
 			{
 				v->push_back(_parse(buf));
@@ -91,6 +85,13 @@ void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vecto
 			{
 				buf[cnt] = c;
 				cnt++;
+			}
+		}
+		else
+		{
+			if (c == ' ')
+			{
+				passSpace = true;
 			}
 		}
 	}
