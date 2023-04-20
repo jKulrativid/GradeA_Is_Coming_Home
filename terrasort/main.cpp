@@ -36,7 +36,7 @@ TYPE _parse(char* char_ptr)
 	return atoi(char_ptr);
 }
 
-void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vector<TYPE>* v)
+void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vector<std::pair<std::string, double>>* v)
 {
 	std::vector<char> rawVals;
 	rawVals.reserve(chunk_size + 100);
@@ -69,6 +69,7 @@ void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vecto
 
 	size_t cnt = 0;
 	char buf[200];
+	char keybuf[2000];
 	bool passSpace = false;
 	for (char& c: rawVals)
 	{
@@ -77,7 +78,7 @@ void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vecto
 			
 			if (c == '\n')
 			{
-				v->push_back(_parse(buf));
+				v->push_back(std::make_pair(std::string(keybuf), _parse(buf)));
 				cnt = 0;
 				passSpace = false;
 			}
@@ -93,11 +94,20 @@ void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vecto
 			{
 				passSpace = true;
 			}
+			else if (c == ':')
+			{
+				cnt = 0;
+			}
+			else
+			{
+				keybuf[cnt] = c;
+				cnt++;
+			}
 		}
 	}
 }
 
-void _merge(std::vector<TYPE>& v, std::vector<TYPE>& frag, size_t start, size_t end)
+void _merge(std::vector<std::pair<std::string, double>>& v, std::vector<std::pair<std::string, double>>& frag, size_t start, size_t end)
 {
 	auto itr = frag.begin();
 	for (size_t i = start; i < end; i++)
@@ -107,7 +117,7 @@ void _merge(std::vector<TYPE>& v, std::vector<TYPE>& frag, size_t start, size_t 
 	}
 }
 
-inline void read_file(std::string filepath, std::vector<TYPE>* result)
+inline void read_file(std::string filepath, std::vector<std::pair<std::string, double>>* result)
 {
 	const size_t fileSize = getFileSize(filepath);
 	if (fileSize < (1<<20) && false)
@@ -117,7 +127,7 @@ inline void read_file(std::string filepath, std::vector<TYPE>* result)
 	}
 	else
 	{
-		std::vector<std::vector<TYPE>> unmergedResult(N_THRAED);
+		std::vector<std::vector<std::pair<std::string, double>>> unmergedResult(N_THRAED);
 		size_t chunkSize = fileSize / (size_t) N_THRAED;
 		size_t readStart = 0;
 		#pragma omp parallel for
@@ -169,15 +179,20 @@ int main(int argc, char** argv)
 
 	std::string inputpath(argv[1]), outputpath(argv[2]);
 	std::cout << inputpath << " | " << outputpath << std::endl;
-	std::vector<TYPE> v;
+	
+	std::vector<std::pair<std::string, TYPE>> v;
 
 	read_file(inputpath, &v);
 
-	std::sort(std::execution::par_unseq, v.begin(), v.end());
+	std::sort(std::execution::par_unseq, v.begin(), v.end(), \
+		[ ]( const std::pair<std::string, double>& lhs, const std::pair<std::string, double>& rhs )
+	{
+		return lhs.second < rhs.second;
+	});
 
 	for (auto x: v)
 	{
-		std::cout << x << std::endl;
+		std::cout << x.first << ": " << x.second << std::endl;
 	}
 	std::exit(0);
 }
