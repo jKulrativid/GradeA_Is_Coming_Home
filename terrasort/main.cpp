@@ -5,6 +5,8 @@
 #include <filesystem>
 #include <fstream>
 #include <omp.h>
+#include <algorithm>
+#include <execution>
 
 // number of pre-allocated vector slots = (file_size / READ_MAGIC_DIVISOR)/ N_THREAD
 #define READ_MAGIC_DIVISOR 6
@@ -171,7 +173,11 @@ int main()
 	const std::string filepath(std::getenv("TERRASORT_TESTCASE"));
 	std::vector<TYPE> v;
 	std::cout << filepath << std::endl;
+
 	read_file(filepath, &v);
+
+	std::sort(std::execution::par_unseq, v.begin(), v.end());
+
 	for (auto x: v)
 	{
 		std::cout << x << std::endl;
