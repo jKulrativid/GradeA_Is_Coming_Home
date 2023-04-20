@@ -2,8 +2,6 @@ version: '3'
 
 services:
   terrasort:
-    volumes:
-      - ./terrasort-volume:/app/result
     build:
       context: ./terrasort
       args:

@@ -148,14 +148,16 @@ inline void read_file(std::string filepath, std::vector<TYPE>* result)
 		for (int t = 0; t < N_THRAED; t++) {
 			_merge(std::ref(*result), std::ref(unmergedResult[t]), n_eachs_cumulative[t] - unmergedResult[t].size(),  n_eachs_cumulative[t]); 
 		}
-
-		std::cout << 4 << std::endl;
 	}
 }
 
-int main()
+int main(int argc, char** argv)
 {
-	omp_set_num_threads(N_THRAED);
+	if (argc < 3)
+	{
+		std::cout << "missing arg" << std::endl;
+		std::exit(1);
+	}
 	std::ios_base::sync_with_stdio(false); std::cin.tie(NULL);
 	auto nthreadChar = std::getenv("NTHREAD");
 	if (!nthreadChar)
@@ -164,18 +166,12 @@ int main()
 	}
 	N_THRAED = atoi(nthreadChar);
 	omp_set_num_threads(N_THRAED);
-	std::cout << "number of threads: " << N_THRAED << std::endl;
-	auto filepathChar = std::getenv("TERRASORT_TESTCASE");
-	if (!filepathChar)\
-	{
-		std::cout << "cannot read testcase path" << std::endl;
-		std::exit(1);
-	}
-	const std::string filepath(std::getenv("TERRASORT_TESTCASE"));
-	std::vector<TYPE> v;
-	std::cout << filepath << std::endl;
 
-	read_file(filepath, &v);
+	std::string inputpath(argv[1]), outputpath(argv[2]);
+	std::cout << inputpath << " | " << outputpath << std::endl;
+	std::vector<TYPE> v;
+
+	read_file(inputpath, &v);
 
 	std::sort(std::execution::par_unseq, v.begin(), v.end());
 

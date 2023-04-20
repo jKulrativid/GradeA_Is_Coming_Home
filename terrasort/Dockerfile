@@ -12,9 +12,6 @@ RUN apt install libtbb-dev -y
 
 # RUN if [ "$MODE" = "profile" ] ; then apt install valgrind && rm valgrind.log*
 
-COPY sort-*.txt .
 COPY main.cpp .
 
-RUN g++ -pthread -ggdb3 -O3 -lstdc++fs -std=c++17 -Wall -Wextra -pedantic -o main.out main.cpp -fopenmp -ltbb -lstdc++fs
-
-ENTRYPOINT [ "./main.out" ]
+RUN g++ -pthread -ggdb3 -O3 -lstdc++fs -std=c++17 -Wall -Wextra -pedantic -o prog main.cpp -fopenmp -ltbb -lstdc++fs
