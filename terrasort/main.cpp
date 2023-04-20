@@ -36,7 +36,7 @@ TYPE _parse(char* char_ptr)
 	return atoi(char_ptr);
 }
 
-void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vector<std::pair<std::string, double>>* v)
+void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vector<std::pair<int, double>>* v)
 {
 	std::ifstream fin(filepath.c_str());
 	fin.seekg(readstart);
@@ -59,7 +59,7 @@ void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vecto
 		{
 			if (c == '\n')
 			{
-				v->push_back(std::make_pair(std::string(keybuf), _parse(buf)));
+				v->push_back(std::make_pair(atoi(keybuf), _parse(buf)));
 				cnt = 0;
 				passSpace = false;
 			}
@@ -98,7 +98,7 @@ void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vecto
 			{
 				if (c == '\n')
 				{
-					v->push_back(std::make_pair(std::string(keybuf), _parse(buf)));
+					v->push_back(std::make_pair(atoi(keybuf), _parse(buf)));
 					cnt = 0;
 					passSpace = false;
 				}
@@ -128,9 +128,11 @@ void _read(std::string filepath, size_t readstart, size_t chunk_size, std::vecto
 			}
 		}
 	}
+
+	fin.close();
 }
 
-void _merge(std::vector<std::pair<std::string, double>>& v, std::vector<std::pair<std::string, double>>& frag, const size_t start, const size_t end)
+void _merge(std::vector<std::pair<int, double>>& v, std::vector<std::pair<int, double>>& frag, const size_t start, const size_t end)
 {
 	auto itr = frag.begin();
 	for (size_t i = start; i < end; i++)
@@ -140,7 +142,7 @@ void _merge(std::vector<std::pair<std::string, double>>& v, std::vector<std::pai
 	}
 }
 
-inline void read_file(const std::string& filepath, std::vector<std::pair<std::string, double>>* result)
+inline void read_file(const std::string& filepath, std::vector<std::pair<int, double>>* result)
 {
 	const size_t fileSize = getFileSize(filepath);
 	if (fileSize < (1<<20) && false)
@@ -150,7 +152,7 @@ inline void read_file(const std::string& filepath, std::vector<std::pair<std::st
 	}
 	else
 	{
-		std::vector<std::vector<std::pair<std::string, double>>> unmergedResult(N_THRAED);
+		std::vector<std::vector<std::pair<int, double>>> unmergedResult(N_THRAED);
 		size_t chunkSize = fileSize / (size_t) N_THRAED;
 		size_t readStart = 0;
 		#pragma omp parallel for
@@ -184,13 +186,60 @@ inline void read_file(const std::string& filepath, std::vector<std::pair<std::st
 	}
 }
 
-inline void write_file(const std::vector<std::pair<std::string, TYPE>>& v, const std::string& outputpath)
+size_t _count_char(const std::vector<std::pair<int, TYPE>>& v, const size_t start, const size_t chunk_size)
 {
-	std::ofstream fout(outputpath);
-
-	for (auto& x: v)
+	size_t result = 0;
+	char buffer[250];
+	for (size_t i = start; i < chunk_size + start; i++)
 	{
-		fout << x.first << ": " << x.second << "\n";
+		result += static_cast<size_t>(sprintf(buffer, "std-%d: %.15f\n", v[i].first, v[i].second));
+	}
+	return result;
+}
+
+void _write(const std::vector<std::pair<int, TYPE>>& v, const std::string& outputpath, const size_t offset, const size_t start, const size_t end)
+{
+	std::fstream fout(outputpath);
+
+	fout.seekg(offset);
+
+	char buffer[200];
+	for (size_t i = start; i < end; i++)
+	{
+		sprintf(buffer, "std-%d: %.15f\n", v[i].first, v[i].second);
+		fout << buffer;
+	}
+
+	fout.close();
+}
+
+inline void write_file(const std::vector<std::pair<int, TYPE>>& v, const std::string& outputpath)
+{
+	std::ofstream fout(outputpath); fout.close();
+
+	std::vector<size_t> chunk_sizes(N_THRAED), prefix_chunk_size(N_THRAED);
+	size_t n_chunk = (v.size()/N_THRAED);
+
+	#pragma omp parallel for
+	for (int t = 0; t < N_THRAED; t++)
+	{
+		size_t frag = (t+1 == N_THRAED) ? (v.size() % N_THRAED) : 0;
+		size_t start = t*n_chunk, end = start + n_chunk + frag;
+		chunk_sizes[t] = _count_char(v, start, n_chunk);
+	}
+
+	prefix_chunk_size[0] = 0;
+	for (int t = 1; t < N_THRAED; t++)
+	{
+		prefix_chunk_size[t] = prefix_chunk_size[t-1] + chunk_sizes[t-1];
+	}
+
+	#pragma omp parallel for
+	for (int t = 0; t < N_THRAED; t++)
+	{
+		size_t frag = (t+1 == N_THRAED) ? (v.size() % N_THRAED) : 0;
+		size_t start = t*n_chunk, end = start + n_chunk + frag;
+		_write(v, outputpath, prefix_chunk_size[t], start, end);
 	}
 }
 
@@ -217,12 +266,12 @@ int main(int argc, char** argv)
 	std::string inputpath(argv[1]), outputpath(argv[2]);
 	std::cout << inputpath << " | " << outputpath << std::endl;
 	
-	std::vector<std::pair<std::string, TYPE>> v;
+	std::vector<std::pair<int, TYPE>> v;
 
 	read_file(inputpath, &v);
 
 	std::sort(std::execution::par_unseq, v.begin(), v.end(), \
-		[ ]( const std::pair<std::string, double>& lhs, const std::pair<std::string, double>& rhs )
+		[ ]( const std::pair<int, double>& lhs, const std::pair<int, double>& rhs )
 	{
 		return lhs.second < rhs.second;
 	});
