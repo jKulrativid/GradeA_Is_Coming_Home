@@ -7,6 +7,7 @@
 #include <omp.h>
 #include <algorithm>
 #include <execution>
+#include <stdio.h>
 
 // number of pre-allocated vector slots = (file_size / READ_MAGIC_DIVISOR)/ N_THREAD
 #define READ_MAGIC_DIVISOR 6
@@ -268,7 +269,11 @@ int main(int argc, char** argv)
 	
 	std::vector<std::pair<int, TYPE>> v;
 
+	std::cout << "--- SETUP COMPLETED ---" << std::endl;
+
 	read_file(inputpath, &v);
+
+	std::cout << "--- READ COMPLETED ---" << std::endl;
 
 	std::sort(std::execution::par_unseq, v.begin(), v.end(), \
 		[ ]( const std::pair<int, double>& lhs, const std::pair<int, double>& rhs )
@@ -276,7 +281,11 @@ int main(int argc, char** argv)
 		return lhs.second < rhs.second;
 	});
 
+	std::cout << "--- SORT COMPLETED ---" << std::endl;
+
 	write_file(v, outputpath);
+
+	std::cout << "--- WRITE COMPLETED ---" << std::endl;
 
 	// END TIME
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
