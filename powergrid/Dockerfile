@@ -8,10 +8,19 @@ RUN apt install software-properties-common -y && add-apt-repository ppa:ubuntu-t
 RUN apt install gcc-9 -y
 RUN apt install g++-9 -y
 RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 10 && update-alternatives --config g++
-RUN apt install libtbb-dev -y
+RUN apt-get install -y build-essential libtbb-dev -y
 
 # RUN if [ "$MODE" = "profile" ] ; then apt install valgrind && rm valgrind.log*
 
-COPY main.cpp .
+COPY ./lp_solve /lp_solve
+COPY ./liblpsolve55.so /usr/lib/liblpsolve55.so
+COPY . .
 
-RUN g++ -pthread -ggdb3 -O3 -lstdc++fs -std=c++17 -mavx -march=znver1 -mtune=znver1 -mpopcnt -mbmi2 -Wall -Wextra -pedantic -o prog main.cpp -fopenmp -ltbb -lstdc++fs
+RUN ldconfig
+
+RUN gcc  -pthread -ggdb3 -O3 \
+  -mavx -march=znver1 -mtune=znver1 -mpopcnt \
+  -mbmi2 -Wall -Wextra -pedantic -o prog  \
+  -I/lp_solve \
+  main.c /usr/lib/liblpsolve55.so \
+  -fopenmp -ltbb

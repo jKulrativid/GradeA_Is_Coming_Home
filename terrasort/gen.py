@@ -3,7 +3,7 @@ import sys
 import random
 
 def pout(k , v):
-    print(k+": "+str(v))
+    print(k+": "+str(v), end='\n')
 
 
 def rev(max=1999999):

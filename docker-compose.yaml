@@ -8,3 +8,7 @@ services:
         # profile, prod
         MODE: prod
     env_file: .env
+  
+  powergrid:
+    build: ./powergrid
+    env_file: .env
