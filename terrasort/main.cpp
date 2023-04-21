@@ -138,7 +138,7 @@ void _merge(std::vector<std::pair<int, double>>& v, std::vector<std::pair<int, d
 	auto itr = frag.begin();
 	for (size_t i = start; i < end; i++)
 	{
-		v[i] = *itr;
+		v[i] = std::move(*itr);
 		itr++;
 	}
 }
@@ -204,11 +204,11 @@ void _write(const std::vector<std::pair<int, TYPE>>& v, const std::string& outpu
 
 	fout.seekg(offset);
 
-	char buffer[200];
+	char buffer[40];
 	for (size_t i = start; i < end; i++)
 	{
-		sprintf(buffer, "std-%d: %.15f\n", v[i].first, v[i].second);
-		fout << buffer;
+		const size_t n = sprintf(buffer, "std-%d: %.15f\n", v[i].first, v[i].second);
+		fout.write(buffer, n);
 	}
 
 	fout.close();
@@ -228,6 +228,8 @@ inline void write_file(const std::vector<std::pair<int, TYPE>>& v, const std::st
 		size_t start = t*n_chunk, end = start + n_chunk + frag;
 		chunk_sizes[t] = _count_char(v, start, n_chunk);
 	}
+
+	std::cout << "--- COUNT CHAR COMPLETED ---" << std::endl;
 
 	prefix_chunk_size[0] = 0;
 	for (int t = 1; t < N_THRAED; t++)

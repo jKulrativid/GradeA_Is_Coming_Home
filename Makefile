@@ -5,5 +5,5 @@ run_terrasort:
 	docker compose up --build terrasort
 
 runtest:
-	docker run --env-file=.env -v C://Users//user//ProjeXt//HighPerfArch//finalproj//data//input:/input \
+	docker run --rm --env-file=.env -v C://Users//user//ProjeXt//HighPerfArch//finalproj//data//input:/input \
 	-v C://Users//user//ProjeXt//HighPerfArch//finalproj//data//output:/output $(IMAGE) ./prog /input/$(INPUT) /output/$(OUTPUT)
