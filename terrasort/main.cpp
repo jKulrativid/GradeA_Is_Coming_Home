@@ -204,7 +204,7 @@ void _write(const std::vector<std::pair<int, TYPE>>& v, const std::string& outpu
 
 	fout.seekg(offset);
 
-	char buffer[40];
+	char buffer[50];
 	for (size_t i = start; i < end; i++)
 	{
 		const size_t n = sprintf(buffer, "std-%d: %.15f\n", v[i].first, v[i].second);
