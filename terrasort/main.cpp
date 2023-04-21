@@ -12,6 +12,7 @@
 // number of pre-allocated vector slots = (file_size / READ_MAGIC_DIVISOR)/ N_THREAD
 #define READ_MAGIC_DIVISOR 6
 #define TYPE double
+#define PAGE_SIZE 1<<9 // bytes
 
 int N_THRAED; // assign in runtime (main func)
 
@@ -204,12 +205,27 @@ void _write(const std::vector<std::pair<int, TYPE>>& v, const std::string& outpu
 
 	fout.seekg(offset);
 
-	char buffer[50];
+	char *buffer = (char*)calloc(2000, sizeof(char));
+	bool has_data = false;
+	size_t cnt = 0;
 	for (size_t i = start; i < end; i++)
 	{
-		const size_t n = sprintf(buffer, "std-%d: %.15f\n", v[i].first, v[i].second);
-		fout.write(buffer, n);
+		const size_t n = sprintf(buffer+cnt, "std-%d: %.15f\n", v[i].first, v[i].second);
+		has_data = true;
+		cnt += n;
+		if (cnt >= PAGE_SIZE)
+		{
+			fout.write(buffer, cnt);
+			cnt = 0;
+			has_data = false;
+		}
 	}
+	if (has_data)
+	{
+		fout.write(buffer, cnt);
+	}
+
+	free(buffer);
 
 	fout.close();
 }
@@ -239,7 +255,7 @@ inline void write_file(const std::vector<std::pair<int, TYPE>>& v, const std::st
 
 	#pragma omp parallel for
 	for (int t = 0; t < N_THRAED; t++)
-	{
+	{ 
 		size_t frag = (t+1 == N_THRAED) ? (v.size() % N_THRAED) : 0;
 		size_t start = t*n_chunk, end = start + n_chunk + frag;
 		_write(v, outputpath, prefix_chunk_size[t], start, end);
