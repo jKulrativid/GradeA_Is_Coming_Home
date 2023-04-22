@@ -18,9 +18,9 @@ COPY . .
 
 RUN ldconfig
 
-RUN gcc  -pthread -ggdb3 -O3 \
+RUN g++  -pthread -ggdb3 -O3 -lstdc++fs -std=c++17 \
   -mavx -march=znver1 -mtune=znver1 -mpopcnt \
   -mbmi2 -Wall -Wextra -pedantic -o prog  \
   -I/lp_solve \
-  main.c /usr/lib/liblpsolve55.so \
-  -fopenmp -ltbb
+  main.cpp /usr/lib/liblpsolve55.so \
+  -fopenmp -ltbb -lstdc++fs
