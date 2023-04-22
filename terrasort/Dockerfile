@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:20.04 AS build
 
 WORKDIR /app
 
@@ -15,3 +15,14 @@ RUN apt install libtbb-dev -y
 COPY main.cpp .
 
 RUN g++ -pthread -ggdb3 -O3 -lstdc++fs -std=c++17 -mavx -march=znver1 -mtune=znver1 -mpopcnt -mbmi2 -Wall -Wextra -pedantic -o prog main.cpp -fopenmp -ltbb -lstdc++fs
+
+FROM debian:11 AS prod
+
+WORKDIR /app
+
+RUN apt update
+
+COPY --from=build /usr/lib /usr/lib
+RUN ldconfig
+
+COPY --from=build /app/prog .

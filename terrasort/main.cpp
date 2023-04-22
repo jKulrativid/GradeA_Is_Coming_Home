@@ -13,6 +13,7 @@
 #define READ_MAGIC_DIVISOR 6
 #define TYPE double
 #define PAGE_SIZE 1<<9 // bytes
+#define CHUNK 1
 
 int N_THRAED; // assign in runtime (main func)
 
@@ -157,7 +158,8 @@ inline void read_file(const std::string& filepath, std::vector<std::pair<int, do
 		std::vector<std::vector<std::pair<int, double>>> unmergedResult(N_THRAED);
 		size_t chunkSize = fileSize / (size_t) N_THRAED;
 		size_t readStart = 0;
-		#pragma omp parallel for
+
+		#pragma omp parallel for schedule(static, CHUNK)
 		for (int t = 0; t < N_THRAED; t++)
 		{
 			unmergedResult[t].reserve(chunkSize / READ_MAGIC_DIVISOR);
@@ -181,7 +183,7 @@ inline void read_file(const std::string& filepath, std::vector<std::pair<int, do
 
 		result->resize(n_total);
 
-		#pragma omp parallel for
+		#pragma omp parallel for schedule(static, CHUNK)
 		for (int t = 0; t < N_THRAED; t++) {
 			_merge(std::ref(*result), std::ref(unmergedResult[t]), n_eachs_cumulative[t] - unmergedResult[t].size(),  n_eachs_cumulative[t]); 
 		}
@@ -237,7 +239,7 @@ inline void write_file(const std::vector<std::pair<int, TYPE>>& v, const std::st
 	std::vector<size_t> chunk_sizes(N_THRAED), prefix_chunk_size(N_THRAED);
 	size_t n_chunk = (v.size()/N_THRAED);
 
-	#pragma omp parallel for
+	#pragma omp parallel for schedule(static, CHUNK)
 	for (int t = 0; t < N_THRAED; t++)
 	{
 		size_t frag = (t+1 == N_THRAED) ? (v.size() % N_THRAED) : 0;
@@ -253,7 +255,7 @@ inline void write_file(const std::vector<std::pair<int, TYPE>>& v, const std::st
 		prefix_chunk_size[t] = prefix_chunk_size[t-1] + chunk_sizes[t-1];
 	}
 
-	#pragma omp parallel for
+	#pragma omp parallel for schedule(static, CHUNK)
 	for (int t = 0; t < N_THRAED; t++)
 	{ 
 		size_t frag = (t+1 == N_THRAED) ? (v.size() % N_THRAED) : 0;
