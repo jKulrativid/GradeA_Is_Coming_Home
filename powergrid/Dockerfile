@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:20.04 AS build
 
 WORKDIR /app
 
@@ -24,3 +24,14 @@ RUN g++  -pthread -ggdb3 -O3 -lstdc++fs -std=c++17 \
   -I/lp_solve \
   main.cpp /usr/lib/liblpsolve55.so \
   -fopenmp -ltbb -lstdc++fs
+
+FROM debian:11-slim AS prod
+
+WORKDIR /app
+
+RUN apt update
+
+COPY --from=build /usr/lib /usr/lib
+RUN ldconfig
+
+COPY --from=build /app/prog .
