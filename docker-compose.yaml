@@ -4,11 +4,11 @@ services:
   terrasort:
     build:
       context: ./terrasort
-      args:
-        # profile, prod
-        MODE: prod
+    image: jkulrativ/terrasort
+
     env_file: .env
   
   powergrid:
     build: ./powergrid
+    image: jkulrativ/powergrid
     env_file: .env
